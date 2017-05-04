@@ -37,23 +37,23 @@ catch
 $vmList = Find-AzureRmResource -TagName "AutoShutDown" -TagValue $ShutDownValue | Where-Object {$_.ResourceGroupName -eq $ResourceGroupName -and $_.ResourceType -eq "Microsoft.Compute/virtualMachines"} | Select Name, ResourceGroupName
 foreach ($vm in $vmList)
 {
-  $PowerState = (Get-AzureRmVM -ResourceGroupName $ResourceGroupName -Name $VM.Name -Status -ErrorAction $ErrorActionPreference -WarningAction $WarningPreference).Statuses.Code[1]
+  $PowerState = (Get-AzureRmVM -ResourceGroupName $ResourceGroupName -Name $vm.Name -Status -ErrorAction $ErrorActionPreference -WarningAction $WarningPreference).Statuses.Code[1]
   if ($PowerState -eq 'PowerState/deallocated')
   {
-    $VM.Name + " is already shut down."
+    $vm.Name + " is already shut down."
   }
     else
     {
-      $VM.Name + " is being shut down."
-      $ShutdownState = (Stop-AzureRmVM -ResourceGroupName $ResourceGroupName -Name $VM.Name -Force -ErrorAction $ErrorActionPreference -WarningAction $WarningPreference).IsSuccessStatusCode
+      $vm.Name + " is being shut down."
+      $ShutdownState = (Stop-AzureRmVM -ResourceGroupName $ResourceGroupName -Name $vm.Name -Force -ErrorAction $ErrorActionPreference -WarningAction $WarningPreference).IsSuccessStatusCode
       Start-Sleep -s 10
       if ($ShutdownState -eq 'True')
       {
-        $VM.Name + " Has been shut down successfully."
+        $vm.Name + " Has been shut down successfully."
       }
         else
         {
-          $VM.Name + " Has failed to shut down. Shutdown Status  = " + $ShutdownState
+          $vm.Name + " Has failed to shut down. Shutdown Status  = " + $ShutdownState
         }
     }
   }
