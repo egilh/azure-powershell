@@ -2,6 +2,7 @@ Import-Module -Name AzureRM.Resources
 
 function ShutDownResource
 {
+  # Get all variables from Runbook Assets
   $ResourceGroupName = Get-AutomationVariable -Name 'ResourceGroupName'
   $ShutDownValue = Get-AutomationVariable -Name 'ShutDownValue'
   $SubId = Get-AutomationVariable -Name 'SubscriptionId'
@@ -33,7 +34,7 @@ catch
       throw $_.Exception
     }
 }
-
+# Find and stop all VM's by specific tag and return status
 $vmList = Find-AzureRmResource -TagName "AutoShutDown" -TagValue $ShutDownValue | Where-Object {$_.ResourceGroupName -eq $ResourceGroupName -and $_.ResourceType -eq "Microsoft.Compute/virtualMachines"} | Select Name, ResourceGroupName
 foreach ($vm in $vmList)
 {
