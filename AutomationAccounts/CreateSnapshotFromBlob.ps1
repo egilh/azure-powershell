@@ -70,9 +70,9 @@ function CreateSnapshotFromBlob
         $blob.ICloudBlob.CreateSnapshot()
         Write-Host 'Creating snapshot of ' + $blob.Name
     }
+
   # Copy snapshot to new container
     $container = Get-AzureStorageContainer -Name $srcContainerName -Context $srcContext
-    $container.CloudBlobContainer.ListBlobs($BlobName, $true, "Snapshots")
     $listOfBlobs = $container.CloudBlobContainer.ListBlobs($BlobName, $true, "Snapshots")
 
     foreach ($CloudBlockBlob in $listOfBlobs) 
@@ -80,9 +80,24 @@ function CreateSnapshotFromBlob
         if ($CloudBlockBlob.IsSnapshot)
         {
         $CloudBlockBlob.FetchAttributes()
-        $newBlobName = $CloudBlockBlob.Name
+        $TimeDate = Get-Date -Format d | ForEach-Object {$_ -replace "/", "" }
+        $newBlobName = $CloudBlockBlob.Name + $TimeDate
         Start-AzureStorageBlobCopy -ICloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext
         }
     }
+
+  # Delete old snapshots
+    foreach ($CloudBlockBlob in $ListOfBLobs) 
+    {
+        if ($CloudBlockBlob.IsSnapshot)
+        {
+        $CloudBlockBlob.FetchAttributes()
+
+        #write-host "filename = " $CloudBlockBlob.Metadata["filename"]
+        $CloudBlockBlobSnapshot = $CloudBlockBlob
+        $CloudBlockBlobSnapshot.SnapshotTime
+        $CloudBlockBlobSnapshot.Delete()
+        }
+   }
 }
 CreateSnapshotFromBlob
