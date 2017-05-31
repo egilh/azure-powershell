@@ -20,18 +20,19 @@ Import-Module -Name AzureRM.Resources
 function CreateSnapshotFromBlob
 {
   # Get all variables from Runbook Assets
-  # Set Context
   #$ResourceGroupName = Get-AutomationVariable -Name 'ResourceGroupName'
   #$TagValue = Get-AutomationVariable -Name 'PCICompliant'
   $SubId = Get-AutomationVariable -Name 'SubscriptionId'
   $srcAccountName = Get-AutomationVariable -Name 'srcAccountName'
   $srcKey = Get-AutomationVariable -Name 'srcKey'
   $srcContainerName = Get-AutomationVariable -Name 'vhds'
+  # Set source context
   $srcContext = New-AzureStorageContext -StorageAccountName $srcAccountName -StorageAccountKey $srcKey
 
   $dstAccountName = Get-AutomationVariable -Name 'dstAccountName'
   $dstKey = Get-AutomationVariable -Name 'dstKey'
   $dstContainerName = 'vhd-snapshots'
+  # Set destination context
   $dstContext = New-AzureStorageContext -StorageAccountName $dstAccountName -StorageAccountKey $dstKey
   
   $connectionName = "AzureRunAsConnection"
