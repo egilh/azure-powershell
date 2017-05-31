@@ -65,40 +65,46 @@ function CreateSnapshotFromBlob
   }
 
   # Get Blob reference and create snapshots of VHD's
-    $blobs = Get-AzureStorageBlob -Container $srcContainerName -Context $srcContext | Where-Object {$_.Name -like '*.vhd'}
-    foreach ($blob in $blobs)
-    {
-        $blob.ICloudBlob.CreateSnapshot()
-        Write-Host 'Creating snapshot of ' + $blob.Name
-    }
+  $blobs = Get-AzureStorageBlob -Container $srcContainerName -Context $srcContext | Where-Object {$_.Name -like '*.vhd'}
+  foreach ($blob in $blobs)
+  {
+    $blob.ICloudBlob.CreateSnapshot()
+    Write-Host "Creating snapshot of " + $blob.Name
+  }
 
   # Copy snapshot to new container
-    $container = Get-AzureStorageContainer -Name $srcContainerName -Context $srcContext
-    $listOfBlobs = $container.CloudBlobContainer.ListBlobs($BlobName, $true, "Snapshots")
+  $container = Get-AzureStorageContainer -Name $srcContainerName -Context $srcContext
+  $listOfBlobs = $container.CloudBlobContainer.ListBlobs($BlobName, $true, "Snapshots")
 
-    foreach ($CloudBlockBlob in $listOfBlobs) 
+  foreach ($CloudBlockBlob in $listOfBlobs) 
+  {
+    if ($CloudBlockBlob.IsSnapshot)
     {
-        if ($CloudBlockBlob.IsSnapshot)
-        {
-        $CloudBlockBlob.FetchAttributes()
-        $TimeDate = Get-Date -Format d | ForEach-Object {$_ -replace "/", "" }
-        $newBlobName = $CloudBlockBlob.Name + $TimeDate
-        Start-AzureStorageBlobCopy -ICloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext
-        }
+      $CloudBlockBlob.FetchAttributes()
+      $TimeDate = Get-Date -Format dd-MM-yyyy
+      $newBlobName = $CloudBlockBlob.Name + $TimeDate
+      Start-AzureStorageBlobCopy -ICloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext
+      $status = Get-AzureStorageBlobCopyState -CloudBlob $CloudBlockBlob -Context $dstContext
+      while ($status.Status -eq 'Pending')
+      {
+        Start-Sleep -Seconds 10
+        Write-Host "Status of $CloudBlockBlob  is " + $status.Status
+      }
     }
+  }
 
   # Delete old snapshots
-    foreach ($CloudBlockBlob in $ListOfBLobs) 
+  foreach ($CloudBlockBlob in $ListOfBLobs) 
+  {
+    if ($CloudBlockBlob.IsSnapshot)
     {
-        if ($CloudBlockBlob.IsSnapshot)
-        {
-        $CloudBlockBlob.FetchAttributes()
+      $CloudBlockBlob.FetchAttributes()
 
-        #write-host "filename = " $CloudBlockBlob.Metadata["filename"]
-        $CloudBlockBlobSnapshot = $CloudBlockBlob
-        $CloudBlockBlobSnapshot.SnapshotTime
-        $CloudBlockBlobSnapshot.Delete()
-        }
-   }
+      #write-host "filename = " $CloudBlockBlob.Metadata["filename"]
+      $CloudBlockBlobSnapshot = $CloudBlockBlob
+      $CloudBlockBlobSnapshot.SnapshotTime
+      $CloudBlockBlobSnapshot.Delete()
+    }
+  }
 }
 CreateSnapshotFromBlob
