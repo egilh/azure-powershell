@@ -35,8 +35,7 @@ function CreateSnapshotFromBlob
   
   $connectionName = "AzureRunAsConnection"
   
-  try
-  {
+  try {
       # Get the connection "AzureRunAsConnection "
       $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName
 
@@ -48,15 +47,12 @@ function CreateSnapshotFromBlob
           -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint
       Set-AzureRmContext -SubscriptionId $SubId
   }
-  catch
-  {
-    if (!$servicePrincipalConnection)
-    {
+  catch {
+    if (!$servicePrincipalConnection) {
       $ErrorMessage = "Connection $connectionName not found."
       throw $ErrorMessage
     }
-      else
-      {
+      else {
         Write-Error -Message $_.Exception
         throw $_.Exception
       }
@@ -64,8 +60,7 @@ function CreateSnapshotFromBlob
 
   # Get Blob reference and create snapshots of VHD's
   $blobs = Get-AzureStorageBlob -Container $srcContainerName -Context $srcContext | Where-Object {$_.Name -like '*.vhd'}
-  foreach ($blob in $blobs)
-  {
+  foreach ($blob in $blobs) {
     $blob.ICloudBlob.CreateSnapshot()
     Write-Host "Creating snapshot of " + $blob.Name
   }
@@ -74,10 +69,8 @@ function CreateSnapshotFromBlob
   $container = Get-AzureStorageContainer -Name $srcContainerName -Context $srcContext
   $listOfBlobs = $container.CloudBlobContainer.ListBlobs($BlobName, $true, "Snapshots")
 
-  foreach ($CloudBlockBlob in $listOfBlobs) 
-  {
-    if ($CloudBlockBlob.IsSnapshot)
-    {
+  foreach ($CloudBlockBlob in $listOfBlobs) {
+    if ($CloudBlockBlob.IsSnapshot) {
       $CloudBlockBlob.FetchAttributes()
       $TimeDate = Get-Date -Format dd-MM-yyyy
       $newBlobName = $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"] + $TimeDate
@@ -91,16 +84,13 @@ function CreateSnapshotFromBlob
     }
   }
   # Delete old snapshots
-  foreach ($CloudBlockBlob in $ListOfBLobs) 
-  {
-    if ($CloudBlockBlob.IsSnapshot)
-    {
-      Write-Host "Checking for old snapshots .."
+  Write-Host "Checking for old snapshots .."
+  foreach ($CloudBlockBlob in $ListOfBLobs) {
+    if ($CloudBlockBlob.IsSnapshot) {
       $CloudBlockBlob.FetchAttributes()
       $CloudBlockBlobSnapshot = $CloudBlockBlob
       $SnapShotTime = $CloudBlockBlobSnapshot.SnapshotTime.Date
-      while ($SnapShotTime -le (Get-Date).AddDays(-1))
-      {
+      if ($SnapShotTime -le (Get-Date).AddDays(-1)) {
         Write-Host "Deleting old snapshot of  " $CloudBlockBlobSnapshot.Metadata["MicrosoftAzureCompute_VMName"]
         $CloudBlockBlobSnapshot.SnapshotTime
         $CloudBlockBlobSnapshot.Delete()
