@@ -82,8 +82,8 @@ function CreateSnapshotFromBlob
     {
       $CloudBlockBlob.FetchAttributes()
       $TimeDate = Get-Date -Format dd-MM-yyyy
-      $newBlobName = $CloudBlockBlob.Name + $TimeDate
-      Start-AzureStorageBlobCopy -ICloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext
+      $newBlobName = $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"] + $TimeDate
+      Start-AzureStorageBlobCopy -CloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext
       $status = Get-AzureStorageBlobCopyState -CloudBlob $CloudBlockBlob -Context $dstContext
       while ($status.Status -eq 'Pending')
       {
@@ -94,16 +94,16 @@ function CreateSnapshotFromBlob
   }
 
   # Delete old snapshots
+  # Needs fixing
   foreach ($CloudBlockBlob in $ListOfBLobs) 
   {
     if ($CloudBlockBlob.IsSnapshot)
     {
       $CloudBlockBlob.FetchAttributes()
-
-      #write-host "filename = " $CloudBlockBlob.Metadata["filename"]
+      Write-Host "VMName:  " + $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"]
       $CloudBlockBlobSnapshot = $CloudBlockBlob
       $CloudBlockBlobSnapshot.SnapshotTime
-      $CloudBlockBlobSnapshot.Delete()
+      #$CloudBlockBlobSnapshot.Delete()
     }
   }
 }
