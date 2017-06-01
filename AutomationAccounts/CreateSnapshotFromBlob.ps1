@@ -85,20 +85,18 @@ function CreateSnapshotFromBlob
   }
   # Delete old snapshots
   Write-Host "Checking for old snapshots .."
+  $CloudBlockBlobSnapshot = $CloudBlockBlob
+  $SnapShotTime = $CloudBlockBlobSnapshot.SnapshotTime.Date
   foreach ($CloudBlockBlob in $ListOfBLobs) {
-    if ($CloudBlockBlob.IsSnapshot) {
+    if ($CloudBlockBlob.IsSnapshot -and $SnapShotTime -le (Get-Date).AddDays(-1)) {
       $CloudBlockBlob.FetchAttributes()
-      $CloudBlockBlobSnapshot = $CloudBlockBlob
-      $SnapShotTime = $CloudBlockBlobSnapshot.SnapshotTime.Date
-      if ($SnapShotTime -le (Get-Date).AddDays(-1)) {
-        Write-Host "Deleting old snapshot of  " $CloudBlockBlobSnapshot.Metadata["MicrosoftAzureCompute_VMName"]
-        $CloudBlockBlobSnapshot.SnapshotTime
-        $CloudBlockBlobSnapshot.Delete()
-      }   
-     }
-     else {
-       "No old snapshots found"
-     }
+      Write-Host "Deleting old snapshot of  " $CloudBlockBlobSnapshot.Metadata["MicrosoftAzureCompute_VMName"]
+      $CloudBlockBlobSnapshot.SnapshotTime
+      $CloudBlockBlobSnapshot.Delete() 
+    }
+    else {
+      Write-Host "No old snapshots found"
+    }
   }
 }
 CreateSnapshotFromBlob
