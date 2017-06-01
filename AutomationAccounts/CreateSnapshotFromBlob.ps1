@@ -101,7 +101,7 @@ function CreateSnapshotFromBlob
       $SnapShotTime = $CloudBlockBlobSnapshot.SnapshotTime.Date
       while ($SnapShotTime -le (Get-Date).AddDays(-1))
       {
-        Write-Host "Deleting old snapshot of  " + $CloudBlockBlobSnapshot.Metadata["MicrosoftAzureCompute_VMName"]
+        Write-Host "Deleting old snapshot of  " $CloudBlockBlobSnapshot.Metadata["MicrosoftAzureCompute_VMName"]
         $CloudBlockBlobSnapshot.SnapshotTime
         $CloudBlockBlobSnapshot.Delete()
       }   
