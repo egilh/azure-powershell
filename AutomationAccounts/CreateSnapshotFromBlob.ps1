@@ -20,19 +20,17 @@ Import-Module -Name AzureRM.Resources
 function CreateSnapshotFromBlob
 {
   # Get all variables from Runbook Assets
-  #$ResourceGroupName = Get-AutomationVariable -Name 'ResourceGroupName'
-  #$TagValue = Get-AutomationVariable -Name 'PCICompliant'
+  # Set source context
   $SubId = Get-AutomationVariable -Name 'SubscriptionId'
   $srcAccountName = Get-AutomationVariable -Name 'srcAccountName'
   $srcKey = Get-AutomationVariable -Name 'srcKey'
   $srcContainerName = Get-AutomationVariable -Name 'vhds'
-  # Set source context
   $srcContext = New-AzureStorageContext -StorageAccountName $srcAccountName -StorageAccountKey $srcKey
 
+  # Set destination context
   $dstAccountName = Get-AutomationVariable -Name 'dstAccountName'
   $dstKey = Get-AutomationVariable -Name 'dstKey'
   $dstContainerName = 'vhd-snapshots'
-  # Set destination context
   $dstContext = New-AzureStorageContext -StorageAccountName $dstAccountName -StorageAccountKey $dstKey
   
   $connectionName = "AzureRunAsConnection"
@@ -85,26 +83,32 @@ function CreateSnapshotFromBlob
       $newBlobName = $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"] + $TimeDate
       Start-AzureStorageBlobCopy -CloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext
       $status = Get-AzureStorageBlobCopyState -CloudBlob $CloudBlockBlob -Context $dstContext
-      while ($status.Status -eq 'Pending')
+      while ($status.Status -eq "Pending")
       {
         Start-Sleep -Seconds 10
         Write-Host "Status of $CloudBlockBlob  is " + $status.Status
       }
     }
   }
-
   # Delete old snapshots
-  # Needs fixing
   foreach ($CloudBlockBlob in $ListOfBLobs) 
   {
     if ($CloudBlockBlob.IsSnapshot)
     {
+      Write-Host "Checking for old snapshots .."
       $CloudBlockBlob.FetchAttributes()
-      Write-Host "VMName:  " + $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"]
       $CloudBlockBlobSnapshot = $CloudBlockBlob
-      $CloudBlockBlobSnapshot.SnapshotTime
-      #$CloudBlockBlobSnapshot.Delete()
-    }
+      $SnapShotTime = $CloudBlockBlobSnapshot.SnapshotTime.Date
+      while ($SnapShotTime -le (Get-Date).AddDays(-1))
+      {
+        Write-Host "Deleting old snapshot of  " + $CloudBlockBlobSnapshot.Metadata["MicrosoftAzureCompute_VMName"]
+        $CloudBlockBlobSnapshot.SnapshotTime
+        $CloudBlockBlobSnapshot.Delete()
+      }   
+     }
+     else {
+       "No old snapshots found"
+     }
   }
 }
 CreateSnapshotFromBlob
