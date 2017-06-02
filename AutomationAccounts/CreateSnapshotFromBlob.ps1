@@ -3,6 +3,7 @@
 Script made for use in Azure Automation Accounts.
 Creates snapshots of all VHD's in specified storage account 
 and copies snapshots to new storage container.
+Deletes snapshots on source-container if older then 1 day.
 #>
 Import-Module -Name AzureRM.Compute
 Import-Module -Name AzureRM.Resources
@@ -62,18 +63,18 @@ function CreateSnapshotFromBlob {
     if ($CloudBlockBlob.IsSnapshot) {
       $CloudBlockBlob.FetchAttributes()
       $TimeDate = Get-Date -Format dd-MM-yyyy
-      $newBlobName = $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"] + $TimeDate
-      Start-AzureStorageBlobCopy -CloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext
-      $status = Get-AzureStorageBlobCopyState -CloudBlob $CloudBlockBlob -Context $dstContext
+      $newBlobName = $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"] + "-$TimeDate.vhd"
+      $blobCopy = Start-AzureStorageBlobCopy -CloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext -Force
+      $status = Get-AzureStorageBlobCopyState -CloudBlob $blobCopy.ICloudBlob -Context $dstContext
       while ($status.Status -eq "Pending")
       {
         Start-Sleep -Seconds 10
-        Write-Host "Status of $CloudBlockBlob  is " + $status.Status
+        Write-Host "Status of $blobCopy.ICloudBlob  is " + $status.Status
       }
     }
   }
   
-   # Delete old snapshots
+   # Delete old snapshots if older then 1 day
   Write-Host "Checking for old snapshots .."
   foreach ($CloudBlockBlob in $ListOfBLobs) {
     if ($CloudBlockBlob.IsSnapshot -and $SnapShotTime -le (Get-Date).AddDays(-1)) {
