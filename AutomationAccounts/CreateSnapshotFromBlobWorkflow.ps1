@@ -21,7 +21,7 @@ $dstKey = Get-AutomationVariable -Name 'dstKey'
 $dstContainerName = 'vhd-snapshots'
 $dstContext = New-AzureStorageContext -StorageAccountName $dstAccountName -StorageAccountKey $dstKey
   
-# Connect to ARM Accounts
+# Connect to ARM Resources
 $connectionName = "AzureRunAsConnection"
 try {
     # Get the connection "AzureRunAsConnection "
@@ -57,11 +57,11 @@ catch {
   $container = Get-AzureStorageContainer -Name $srcContainerName -Context $srcContext
   $listOfBlobs = $container.CloudBlobContainer.ListBlobs($BlobName, $true, "Snapshots")
 
-  foreach ($CloudBlockBlob in $listOfBlobs) {
+  foreach -Parallel ($CloudBlockBlob in $listOfBlobs) {
     if ($CloudBlockBlob.IsSnapshot) {
       $CloudBlockBlob.FetchAttributes()
       $TimeDate = Get-Date -Format dd-MM-yyyy
-      $newBlobName = $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"] + $TimeDate + '.vhd'
+      $newBlobName = $CloudBlockBlob.Metadata["MicrosoftAzureCompute_VMName"] + "-$TimeDate.vhd"
       $blobCopy = Start-AzureStorageBlobCopy -CloudBlob $CloudBlockBlob -DestContainer $dstContainerName -DestBlob $newBlobName -Context $dstContext -Force
       $status = Get-AzureStorageBlobCopyState -CloudBlob $blobCopy.ICloudBlob -Context $srcContext
       while ($status.Status -eq "Pending")
