@@ -1,24 +1,13 @@
 <#
 .SYNOPSIS
-  Short description
-
-.DESCRIPTION
-  Long description
-
-.OUTPUTS
-  The value returned by this cmdlet
-
-.EXAMPLE
-  Example of how to use this cmdlet
-
-.LINK
-  To other relevant cmdlets or help
+Script made for use in Azure Automation Accounts.
+Creates snapshots of all VHD's in specified storage account 
+and copies snapshots to new storage container.
 #>
 Import-Module -Name AzureRM.Compute
 Import-Module -Name AzureRM.Resources
 
-function CreateSnapshotFromBlob
-{
+function CreateSnapshotFromBlob {
   # Get all variables from Runbook Assets
   # Set source context
   $SubId = Get-AutomationVariable -Name 'SubscriptionId'
@@ -83,19 +72,17 @@ function CreateSnapshotFromBlob
       }
     }
   }
-  # Delete old snapshots
+  
+   # Delete old snapshots
   Write-Host "Checking for old snapshots .."
-  $CloudBlockBlobSnapshot = $CloudBlockBlob
-  $SnapShotTime = $CloudBlockBlobSnapshot.SnapshotTime.Date
   foreach ($CloudBlockBlob in $ListOfBLobs) {
     if ($CloudBlockBlob.IsSnapshot -and $SnapShotTime -le (Get-Date).AddDays(-1)) {
+      $CloudBlockBlobSnapshot = $CloudBlockBlob
+      $SnapShotTime = $CloudBlockBlobSnapshot.SnapshotTime.Date
       $CloudBlockBlob.FetchAttributes()
       Write-Host "Deleting old snapshot of  " $CloudBlockBlobSnapshot.Metadata["MicrosoftAzureCompute_VMName"]
       $CloudBlockBlobSnapshot.SnapshotTime
       $CloudBlockBlobSnapshot.Delete() 
-    }
-    else {
-      Write-Host "No old snapshots found"
     }
   }
 }
