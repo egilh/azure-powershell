@@ -4,8 +4,8 @@ Script made for use in Azure Automation Accounts.
 Creates snapshots of all VHD's in specified storage account 
 and copies snapshots to new storage container.
 Deletes snapshots on source container if older then 2 day.
+
 #>
-Import-Module -Name AzureRM.Compute
 Import-Module -Name AzureRM.Resources
 
 # Get all variables from Runbook Assets
@@ -52,8 +52,8 @@ function CreateSnapshotFromBlob {
     # Get Blob reference and create snapshots of VHD's
     $blobs = Get-AzureStorageBlob -Container $srcContainerName -Context $srcContext | Where-Object {$_.Name -like '*.vhd'}
     foreach ($blob in $blobs) {
-        if (!$blob.CloudBlob.IsSnapshot) {
-            $blob.CloudBlob.CreateSnapshot()
+        if (!$blob.ICloudBlob.IsSnapshot) {
+            $blob.ICloudBlob.CreateSnapshot()
             Write-Host "Creating snapshot of " $blob.Name
         }
     }
