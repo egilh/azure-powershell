@@ -1,10 +1,9 @@
 <#
-.SYNOPSIS
+.DESCRIPTION
 Script made for use in Azure Automation Accounts.
 Creates snapshots of all VHD's in specified storage account 
 and copies snapshots to new storage container.
 Deletes snapshots on source container if older then 2 day.
-
 #>
 Import-Module -Name AzureRM.Resources
 
