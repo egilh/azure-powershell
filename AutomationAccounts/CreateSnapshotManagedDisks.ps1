@@ -44,8 +44,10 @@ function CreateSnapshotManagedDisks {
         }
     }
     
+    # Set location and expiration for SAS token
     $location = 'westeurope'
     $sasExpiryDuration = '3600'
+    # Create list of disks
     $diskList = Get-AzureRMDisk -ResourceGroupName $rgName
     # Check if container exists
     $dstContainer = Get-AzureStorageContainer -Name $dstContainerName -Context $dstContext -ErrorAction SilentlyContinue
