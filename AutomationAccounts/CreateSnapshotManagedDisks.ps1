@@ -7,20 +7,20 @@ snapshots to new container.
 #>
 Import-Module -Name AzureRM.Resources
 Import-Module -Name AzureRM.Compute
-function CreateSnapshotManagedDisks {
 
-    # Get all variables from Runbook Assets
-    $SubId = Get-AutomationVariable -Name 'SubscriptionId'
-    $rgName = Get-AutomationConnection -Name 'ResourceGroup'
-    $dstAccountName = Get-AutomationVariable -Name 'dstAccountName'
-    $dstKey = Get-AutomationVariable -Name 'dstKey'
-    $dstContainerName = 'vhd-snapshots'
-    # Set destination context
-    $dstContext = New-AzureStorageContext -StorageAccountName $dstAccountName -StorageAccountKey $dstKey
+# Get all variables from Runbook Assets
+$SubId = Get-AutomationVariable -Name 'SubscriptionId'
+$rgName = Get-AutomationConnection -Name 'ResourceGroup'
+$dstAccountName = Get-AutomationVariable -Name 'dstAccountName'
+$dstKey = Get-AutomationVariable -Name 'dstKey'
+$dstContainerName = 'vhd-snapshots'
+# Set destination context
+$dstContext = New-AzureStorageContext -StorageAccountName $dstAccountName -StorageAccountKey $dstKey
+
+function CreateSnapshotManagedDisks {
 
     # Connect to ARM Resources
     $connectionName = "AzureRunAsConnection"
-  
     try {
         # Get the connection "AzureRunAsConnection "
         $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName
@@ -49,7 +49,7 @@ function CreateSnapshotManagedDisks {
     $diskList = Get-AzureRMDisk -ResourceGroupName $rgName
     # Check if container exists
     $dstContainer = Get-AzureStorageContainer -Name $dstContainerName -Context $dstContext -ErrorAction SilentlyContinue
-    if (!$dstContainer){
+    if (!$dstContainer) {
         Write-Host "Creating destination container $dstContainerName"
         New-AzureStorageContainer -Name $dstContainerName -Context $dstContext
     }
