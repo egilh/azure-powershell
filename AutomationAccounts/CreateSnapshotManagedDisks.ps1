@@ -82,7 +82,7 @@ function CreateSnapshotManagedDisks {
     $oldSnapshots = Get-AzureRMSNapshot -ResourceGroupName $rgName
     foreach ($oldSnapshot in $oldSnapshots) {
         if ($oldSnapshot.TimeCreated -le (Get-Date).AddDays(-7)) {
-            Remove-AzureRMSnapshot -ResourceGroupName $rgName -SnapshotName $old.Name        
+            Remove-AzureRMSnapshot -ResourceGroupName $rgName -SnapshotName $oldSnapshot.Name        
         }
     }
 } 
