@@ -4,18 +4,10 @@
 #>
 Import-Module -Name AzureRM.Resources
 Import-Module -Name AzureRM.Compute
-function CreateSnapshotManagedDisks (OptionalParameters) {
+function CreateSnapshotManagedDisks {
 
     # Get all variables from Runbook Assets
-    $rgName = Get-AutomationVariable -Name 'ResourceGroup'
-    $location = 'westeurope'
     $SubId = Get-AutomationVariable -Name 'SubscriptionId'
-    # Set source context
-    $srcAccountName = Get-AutomationVariable -Name 'srcAccountName'
-    $srcKey = Get-AutomationVariable -Name 'srcKey'
-    $srcContainerName = Get-AutomationVariable -Name 'vhds'
-    $srcContext = New-AzureStorageContext -StorageAccountName $srcAccountName -StorageAccountKey $srcKey
-
     # Set destination context
     $dstAccountName = Get-AutomationVariable -Name 'dstAccountName'
     $dstKey = Get-AutomationVariable -Name 'dstKey'
@@ -48,5 +40,25 @@ function CreateSnapshotManagedDisks (OptionalParameters) {
         }
     }
     
-    $vmList = Get-AzureRMVM 
-}
+    $location = 'westeurope'
+    $sasExpiryDuration = '3600'
+    $diskList = Get-AzureRMDisk
+    foreach ($disk in $diskList) {
+        $snapshotName = $($disk.Name + "_snapshot-" + $(Get-Date -Format dd-MM-yyyy))
+        $snapshot = New-AzureRMSnapshotConfig -SourceUri $disk.id -CreateOption Copy -Location $location
+        New-AzureRmSnapshot -Snapshot $snapshot -SnapshotName $snapshotName -ResourceGroupName $resourceGroupName
+        $sas = Grant-AzureRmSnapshotAccess `
+            -ResourceGroupName $ResourceGroupName `
+            -SnapshotName $SnapshotName  `
+            -DurationInSecond $sasExpiryDuration `
+            -Access Read 
+        $dstVHDFileName = $snapshotName
+        $copyBlob = Start-AzureStorageBlobCopy `
+            -AbsoluteUri $sas.AccessSAS `
+            -DestContainer $dstContainerName `
+            -DestContext $dstContext `
+            -DestBlob $dstVHDFileName
+        $status = $copyBlob | Get-AzureStorageBlobCopyState
+        Write-Host $($dstVHDFileName + " is " + $status.Status)
+    }
+} 

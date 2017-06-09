@@ -5,7 +5,6 @@ Template for connecting to ARM Resources
 Import-Module -Name AzureRM.Resources
 
 # Get all variables from Runbook Assets
-$rgName = Get-Automationvariable -Name 'ResourceGroup' 
 $SubId = Get-Automationvariable -Name 'SubscriptionID'
 
 # Connect to ARM Accounts
