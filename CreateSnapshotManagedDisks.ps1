@@ -1,6 +1,9 @@
 <#
 .DESCRIPTION
-
+Script made for use in Azure Automation Accounts.
+Creates snapshots of Managed disks in specified 
+Subsctiption ID and Resource Group and copies 
+snapshots to new container.
 #>
 Import-Module -Name AzureRM.Resources
 Import-Module -Name AzureRM.Compute
