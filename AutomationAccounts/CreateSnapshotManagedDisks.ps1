@@ -4,6 +4,7 @@ Script made for use in Azure Automation Accounts.
 Creates snapshots of Managed disks in specified 
 Subsctiption ID and Resource Group and copies 
 snapshots to new container.
+Deletes snapshots older then 7 days - be careful.
 #>
 Import-Module -Name AzureRM.Resources
 Import-Module -Name AzureRM.Compute
@@ -60,20 +61,29 @@ function CreateSnapshotManagedDisks {
         $snapshotName = $($disk.Name + "_snapshot-" + $(Get-Date -Format dd-MM-yyyy))
         $snapshot = New-AzureRMSnapshotConfig -SourceUri $disk.id -CreateOption Copy -Location $location
         Write-Host "Creating snapshot of $disk.Name "
-        New-AzureRmSnapshot -Snapshot $snapshot -SnapshotName $snapshotName -ResourceGroupName $rgName
-        $sas = Grant-AzureRmSnapshotAccess `
-            -ResourceGroupName $rgName `
-            -SnapshotName $SnapshotName  `
-            -DurationInSecond $sasExpiryDuration `
-            -Access Read 
-        $dstVHDFileName = $snapshotName
-        $copyBlob = Start-AzureStorageBlobCopy `
-            -AbsoluteUri $sas.AccessSAS `
-            -DestContainer $dstContainerName `
-            -DestContext $dstContext `
-            -DestBlob $dstVHDFileName
-        $status = $copyBlob | Get-AzureStorageBlobCopyState
-        Write-Host $($dstVHDFileName + " is " + $status.Status)
+        $newSnapshot = New-AzureRmSnapshot -Snapshot $snapshot -SnapshotName $snapshotName -ResourceGroupName $rgName
+        if ($newSnapshot) {
+            $sas = Grant-AzureRmSnapshotAccess `
+                -ResourceGroupName $rgName `
+                -SnapshotName $SnapshotName  `
+                -DurationInSecond $sasExpiryDuration `
+                -Access Read 
+            $dstVHDFileName = $snapshotName
+            $copyBlob = Start-AzureStorageBlobCopy `
+                -AbsoluteUri $sas.AccessSAS `
+                -DestContainer $dstContainerName `
+                -DestContext $dstContext `
+                -DestBlob $dstVHDFileName
+            $status = $copyBlob | Get-AzureStorageBlobCopyState
+            Write-Host $($dstVHDFileName + " is " + $status.Status)
+        }
+    }
+
+    $oldSnapshots = Get-AzureRMSNapshot -ResourceGroupName $rgName
+    foreach ($oldSnapshot in $oldSnapshots) {
+        if ($oldSnapshot.TimeCreated -le (Get-Date).AddDays(-7)) {
+            Remove-AzureRMSnapshot -ResourceGroupName $rgName -SnapshotName $old.Name        
+        }
     }
 } 
 CreateSnapshotManagedDisks
