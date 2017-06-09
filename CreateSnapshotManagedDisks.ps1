@@ -8,10 +8,11 @@ function CreateSnapshotManagedDisks {
 
     # Get all variables from Runbook Assets
     $SubId = Get-AutomationVariable -Name 'SubscriptionId'
-    # Set destination context
+    $rgName = Get-AutomationConnection -Name 'ResourceGroup'
     $dstAccountName = Get-AutomationVariable -Name 'dstAccountName'
     $dstKey = Get-AutomationVariable -Name 'dstKey'
     $dstContainerName = 'vhd-snapshots'
+    # Set destination context
     $dstContext = New-AzureStorageContext -StorageAccountName $dstAccountName -StorageAccountKey $dstKey
 
     # Connect to ARM Resources
@@ -42,13 +43,21 @@ function CreateSnapshotManagedDisks {
     
     $location = 'westeurope'
     $sasExpiryDuration = '3600'
-    $diskList = Get-AzureRMDisk
+    $diskList = Get-AzureRMDisk -ResourceGroupName $rgName
+    # Check if container exists
+    $dstContainer = Get-AzureStorageContainer -Name $dstContainerName -Context $dstContext -ErrorAction SilentlyContinue
+    if (!$dstContainer){
+        Write-Host "Creating destination container $dstContainerName"
+        New-AzureStorageContainer -Name $dstContainerName -Context $dstContext
+    }
+    # Create snapshots and copy to destination container
     foreach ($disk in $diskList) {
         $snapshotName = $($disk.Name + "_snapshot-" + $(Get-Date -Format dd-MM-yyyy))
         $snapshot = New-AzureRMSnapshotConfig -SourceUri $disk.id -CreateOption Copy -Location $location
-        New-AzureRmSnapshot -Snapshot $snapshot -SnapshotName $snapshotName -ResourceGroupName $resourceGroupName
+        Write-Host "Creating snapshot of $disk.Name "
+        New-AzureRmSnapshot -Snapshot $snapshot -SnapshotName $snapshotName -ResourceGroupName $rgName
         $sas = Grant-AzureRmSnapshotAccess `
-            -ResourceGroupName $ResourceGroupName `
+            -ResourceGroupName $rgName `
             -SnapshotName $SnapshotName  `
             -DurationInSecond $sasExpiryDuration `
             -Access Read 
@@ -62,3 +71,4 @@ function CreateSnapshotManagedDisks {
         Write-Host $($dstVHDFileName + " is " + $status.Status)
     }
 } 
+CreateSnapshotManagedDisks

@@ -58,8 +58,9 @@ function CreateSnapshotFromBlob {
     }
 
     # Copy snapshot to new container
-    $dstContainer = Get-AzureStorageContainer -Name $dstContainerName -Context $dstContext
-    if (!$dstContainer){
+    $dstContainer = Get-AzureStorageContainer -Name $dstContainerName -Context $dstContext -ErrorAction SilentlyContinue
+    if (!$dstContainer) {
+        Write-Host "Creating destination container $dstContainerName"
         New-AzureStorageContainer -Name $dstContainerName -Context $dstContext
     }
     $container = Get-AzureStorageContainer -Name $srcContainerName -Context $srcContext
@@ -70,11 +71,11 @@ function CreateSnapshotFromBlob {
             $TimeDate = Get-Date -Format dd-MM-yyyy
             $newBlobName = $($CloudBlockBlob.Metadata["MicrosoftAzureCompute_DiskName"] + "-$TimeDate.vhd")
             $copyBlob = Start-AzureStorageBlobCopy `
-            -CloudBlob $CloudBlockBlob `
-            -DestContainer $dstContainerName `
-            -DestBlob $newBlobName `
-            -Context $dstContext `
-            -Force
+                -CloudBlob $CloudBlockBlob `
+                -DestContainer $dstContainerName `
+                -DestBlob $newBlobName `
+                -Context $dstContext `
+                -Force
             $status = $copyBlob | Get-AzureStorageBlobCopyState
             if ($status.Status -eq "Pending") {
                 Start-Sleep -Seconds 10
