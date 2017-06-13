@@ -1,24 +1,23 @@
 function CreateARMVM {
     param(
-        # Parameter help description
-        [Parameter(Mandatory=$True, Position=0)]
+        [Parameter(Mandatory = $True, Position = 0)]
         [String]
-        $ResourgeGroup,
-        # Parameter help description
-        [Parameter(Mandatory=$True, Position=1)]
+        $ResourceGroup,
+        [Parameter(Mandatory = $True, Position = 1)]
+        [String]
+        $SubscriptionID,
+        [Parameter(Mandatory = $True, Position = 2)]
         [String]
         $vmName,
-        # Parameter help description
-        [Parameter(Mandatory=$True, Position=2)]
-        [ValidateSet("Standard_DS1_v2","Standard_DS2_v2","Standard_DS3_v2", "Standard_DS4_v2")]
+        [Parameter(Mandatory = $True, Position = 3)]
+        [ValidateSet("Standard", "Premium")]
         [String]
-        $vmSize = "Standard_DS2_v2",
-        # Parameter help description
-        [Parameter(Mandatory=$True, Position=3)]
-        [ValidateSet("Standard","Premium")]
+        $diskType = "Standard",
+        [Parameter(Mandatory = $false, Position = 4)]
+        [ValidateSet("Standard_DS1_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2")]
         [String]
-        $diskType = "Standard"
-    )
+        $vmSize = "Standard_DS1_v2"
+    ))
 
     try {
         Get-AzureRMContext
@@ -32,5 +31,5 @@ function CreateARMVM {
             throw $_.Exception
         }
     }
-
+    # Needs fix
 }

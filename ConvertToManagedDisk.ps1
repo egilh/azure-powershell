@@ -1,23 +1,22 @@
 function ConvertToMangedDisk {
     param(
-        # Parameter help description
         [Parameter(Mandatory = $True, Position = 0)]
         [String]
         $ResourceGroup,
-        # Parameter help description
         [Parameter(Mandatory = $True, Position = 1)]
         [String]
+        $SubscriptionID,
+        [Parameter(Mandatory = $True, Position = 2)]
+        [String]
         $vmName,
-        # Parameter help description
         [Parameter(Mandatory = $True, Position = 3)]
         [ValidateSet("Standard", "Premium")]
         [String]
         $diskType = "Standard",
-        # Parameter help description
-        [Parameter(Mandatory = $false, Position = 2)]
+        [Parameter(Mandatory = $false, Position = 4)]
         [ValidateSet("Standard_DS1_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2")]
         [String]
-        $vmSize = "Standard_DS2_v2"
+        $vmSize = "Standard_DS1_v2"
     )
 
     try {
@@ -32,13 +31,13 @@ function ConvertToMangedDisk {
             throw $_.Exception
         }
     }
-    $vmList = Get-AzureRmVM -Name $vmName -ResourceGroupName $resourceGroupName
 
-    # Stop deallocate the VM before changing the size
+    $vmList = Get-AzureRmVM -Name $vmName -ResourceGroupName $resourceGroupName
+    # Stop and deallocate the VM before changing the size
     foreach ($vm in $vmList) {
         Stop-AzureRmVM -ResourceGroupName $resourceGroupName -Name $vm -Force
         ConvertTo-AzureRmVMManagedDisk -ResourceGroupName $rgName -VMName $vmName
-        # If Premium storage is selected, change disks t
+        # If Premium storage is selected, change disks
         # For disks that belong to the VM selected, convert to Premium storage
         if ($diskType -eq "Premium") {
             # Change VM size to a size supporting Premium storage
