@@ -61,7 +61,7 @@ function ConvertToMangedDisk {
         else {
             Write-Host $($vm.Id + " is already " + $testDisk.AccountType)
         }
-        Start-AzureRmVM -ResourceGroupName $rgName -Name $vmName
+        Start-AzureRmVM -ResourceGroupName $rgName -Name $vm
     }
 }
 ConvertToMangedDisk 
