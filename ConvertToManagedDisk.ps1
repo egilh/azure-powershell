@@ -2,10 +2,10 @@ function ConvertToMangedDisk {
     param(
         [Parameter(Mandatory = $True, Position = 0)]
         [String]
-        $ResourceGroup,
+        $rgName,
         [Parameter(Mandatory = $True, Position = 1)]
         [String]
-        $SubscriptionName,
+        $subName,
         [Parameter(Mandatory = $True, Position = 2)]
         [String]
         $vmName,
@@ -31,31 +31,31 @@ function ConvertToMangedDisk {
             throw $_.Exception
         }
     }
-    Get-AzureRMSubscription -SubscriptionName $SubscriptionName | Select-AzureRmSubscription
-    $vmList = Get-AzureRmVM -Name $vmName -ResourceGroupName $resourceGroupName
+    Get-AzureRMSubscription -SubscriptionName $subName | Select-AzureRmSubscription
+    $vmList = Get-AzureRmVM -Name $vmName -ResourceGroupName $rgName
     # Stop and deallocate the VM before changing the size
     foreach ($vm in $vmList) {
-        Stop-AzureRmVM -ResourceGroupName $resourceGroupName -Name $vm -Force
-        ConvertTo-AzureRmVMManagedDisk -ResourceGroupName $rgName -VMName $vmName
+        Stop-AzureRmVM -ResourceGroupName $rgName -Name $vm -Force
+        ConvertTo-AzureRmVMManagedDisk -ResourceGroupName $$rgName -VMName $vmName
         # If Premium storage is selected, change disks
         # For disks that belong to the VM selected, convert to Premium storage
         if ($diskType -eq "Premium") {
             # Change VM size to a size supporting Premium storage
             $vm.HardwareProfile.VmSize = $size
             Write-Host $("Setting correct VM type for Premium storage")
-            Update-AzureRmVM -VM $vm -ResourceGroupName $resourceGroupName
+            Update-AzureRmVM -VM $vm -ResourceGroupName $rgName
             # Get all disks in the resource group of the VM
-            $vmDisks = Get-AzureRmDisk -ResourceGroupName $resourceGroupName 
+            $vmDisks = Get-AzureRmDisk -ResourceGroupName $rgName
             foreach ($disk in $vmDisks) {
                 if ($disk.OwnerId -eq $vm.Id) {
                     $diskUpdateConfig = New-AzureRmDiskUpdateConfig –AccountType PremiumLRS
-                    Update-AzureRmDisk -DiskUpdate $diskUpdateConfig -ResourceGroupName $resourceGroupName `
+                    Update-AzureRmDisk -DiskUpdate $diskUpdateConfig -ResourceGroupName $rgName`
                         -DiskName $disk.Name
                 }
             }
         }
 
-        Start-AzureRmVM -ResourceGroupName $resourceGroupName -Name $vmName
+        Start-AzureRmVM -ResourceGroupName $rgName -Name $vmName
     }
 }
 ConvertToMangedDisk 

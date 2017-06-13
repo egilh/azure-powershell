@@ -2,10 +2,10 @@ function CreateARMVM {
     param(
         [Parameter(Mandatory = $True, Position = 0)]
         [String]
-        $ResourceGroup,
+        $rgName,
         [Parameter(Mandatory = $True, Position = 1)]
         [String]
-        $SubscriptionName,
+        $subName,
         [Parameter(Mandatory = $True, Position = 2)]
         [String]
         $vmName,
@@ -17,7 +17,7 @@ function CreateARMVM {
         [ValidateSet("Standard_DS1_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2")]
         [String]
         $vmSize = "Standard_DS1_v2"
-    ))
+    )
 
     try {
         Get-AzureRMContext
