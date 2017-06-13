@@ -5,7 +5,7 @@ function ConvertToMangedDisk {
         $ResourceGroup,
         [Parameter(Mandatory = $True, Position = 1)]
         [String]
-        $SubscriptionID,
+        $SubscriptionName,
         [Parameter(Mandatory = $True, Position = 2)]
         [String]
         $vmName,
@@ -31,7 +31,7 @@ function ConvertToMangedDisk {
             throw $_.Exception
         }
     }
-
+    Get-AzureRMSubscription -SubscriptionName $SubscriptionName | Select-AzureRmSubscription
     $vmList = Get-AzureRmVM -Name $vmName -ResourceGroupName $resourceGroupName
     # Stop and deallocate the VM before changing the size
     foreach ($vm in $vmList) {

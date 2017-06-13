@@ -5,7 +5,7 @@ function CreateARMVM {
         $ResourceGroup,
         [Parameter(Mandatory = $True, Position = 1)]
         [String]
-        $SubscriptionID,
+        $SubscriptionName,
         [Parameter(Mandatory = $True, Position = 2)]
         [String]
         $vmName,
