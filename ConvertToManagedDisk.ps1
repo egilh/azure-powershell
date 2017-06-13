@@ -37,28 +37,25 @@ function ConvertToMangedDisk {
     foreach ($vm in $vmList) {
         # Set VM Context and check if VM is already using Managed Disks
         $vmContext = Get-AzureRmVM -Name $vm -ResourceGroupName $rgName
-        $vmDisks = Get-AzureRmDisk -ResourceGroupName $rgName
-        $checkDisk = $vmDisks | Where-Object {$_.OwnerId -eq $vmContext.Id}
+        $vmDisks = Get-AzureRmDisk -ResourceGroupName $rgName | Where-Object {$_.OwnerId -eq $vmContext.Id}
         $vm.HardwareProfile.VmSize = $size
         if ($vmContext.StorageProfile.OsDisk.ManagedDisk -eq $null) {
-            Write-Host $("Stopping and converting" + $vm)
+            Write-Host $(" Stopping and converting " + $vm)
             Stop-AzureRmVM -ResourceGroupName $rgName -Name $vm -Force
             ConvertTo-AzureRmVMManagedDisk -ResourceGroupName $rgName -VMName $vm
         }
         # If Premium storage is selected convert disks that belong
         # to the selected VM, convert to Premium storage
         # Get all disks in the resource group of the VM
-        Write-Host $("Checking if disks needs to be upgraded to Premium ..")
-        if ($diskType -eq "Premium" -and $checkDisk.AccountType -eq "Standard") {
+        Write-Host $("Checking if disks needs to be upgraded ..")
+        if ($diskType -eq "Premium" -and $vmDisks.AccountType -eq "Standard") {
             # Change VM size to a size supporting Premium storage
-            Write-Host $("Upgrading " + $vm)
+            Write-Host $(" Upgrading " + $vm + " to Premium Storage ")
             Update-AzureRmVM -VM $vmContext -ResourceGroupName $rgName
             foreach ($disk in $vmDisks) {
-                if ($disk.OwnerId -eq $vmContext.Id) {
-                    $diskUpdateConfig = New-AzureRmDiskUpdateConfig –AccountType "PremiumLRS"
-                    Update-AzureRmDisk -DiskUpdate $diskUpdateConfig -ResourceGroupName $rgName `
-                        -DiskName $disk.Name
-                }
+                $diskUpdateConfig = New-AzureRmDiskUpdateConfig –AccountType "PremiumLRS"
+                Update-AzureRmDisk -DiskUpdate $diskUpdateConfig -ResourceGroupName $rgName `
+                -DiskName $disk.Name
             }
         }
         else {
