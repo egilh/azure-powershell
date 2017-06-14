@@ -53,7 +53,7 @@ function CreateSnapshotManagedDisks {
     # Check if container exists
     $dstContainer = Get-AzureStorageContainer -Name $dstContainerName -Context $dstContext -ErrorAction SilentlyContinue
     if (!$dstContainer) {
-        Write-Host "Creating destination container $dstContainerName"
+        Write-Host $("Creating destination container " + $dstContainerName)
         New-AzureStorageContainer -Name $dstContainerName -Context $dstContext
     }
     # Create snapshots and copy to destination container

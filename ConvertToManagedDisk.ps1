@@ -1,3 +1,13 @@
+<#
+.DESCRIPTION
+Script for converting Azure VM disks to Managed Disks.
+.PARAMETER
+- rgName 
+- subName
+- vmName
+- diskType
+- vmSize
+#>
 function ConvertToMangedDisk {
     param(
         [Parameter(Mandatory = $True, Position = 0)]
@@ -49,11 +59,14 @@ function ConvertToMangedDisk {
         # to the selected VM, convert to Premium storage
         # Get all disks in the resource group of the VM
         $vmDisks = Get-AzureRmDisk -ResourceGroupName $rgName | Where-Object {$_.OwnerId -eq $vmContext.Id}
-        Write-Host $("Checking if disks needs to be upgraded ..")
-        if ($diskType -eq "Premium" -and $vmDisks.AccountType -eq "Standard") {
+        if ($diskType -eq 'Premium'-and $vmDisks.AccountType -eq 'Standard') {
             # Change VM size to a size supporting Premium storage
-            $vmContext.HardwareProfile.VmSize = $size
             Write-Host $(" Upgrading " + $vm + " to Premium Storage ")
+            $PowerState = (Get-AzureRmVM -ResourceGroupName $rgName -Name $vm -Status).Statuses.Code[1]
+            if ($PowerState -eq 'PowerState/running') {
+                Stop-AzureRmVM -ResourceGroupName $rgName -Name $vm -Force
+            }
+            $vmContext.HardwareProfile.VmSize = $size
             Update-AzureRmVM -VM $vmContext -ResourceGroupName $rgName
             foreach ($disk in $vmDisks) {
                 $diskUpdateConfig = New-AzureRmDiskUpdateConfig –AccountType "PremiumLRS"
